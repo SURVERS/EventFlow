@@ -1,0 +1,841 @@
+basePath: /api/v1
+definitions:
+  models.Category:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateEventRegistrationRequest:
+    properties:
+      event_id:
+        type: integer
+      participant_id:
+        type: integer
+      status:
+        type: string
+    required:
+    - event_id
+    - participant_id
+    - status
+    type: object
+  models.CreateEventRequest:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      end_time:
+        type: string
+      event_type:
+        type: string
+      publish_status:
+        type: string
+      start_time:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    required:
+    - category_id
+    - end_time
+    - event_type
+    - publish_status
+    - start_time
+    - title
+    type: object
+  models.CreateOrganizerRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - role
+    type: object
+  models.CreateParticipantRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - full_name
+    - phone
+    type: object
+  models.CreateTicketRequest:
+    properties:
+      event_id:
+        type: integer
+      participant_id:
+        type: integer
+      status:
+        type: string
+      ticket_type:
+        type: string
+    required:
+    - event_id
+    - participant_id
+    - status
+    - ticket_type
+    type: object
+  models.Event:
+    properties:
+      category_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      end_time:
+        type: string
+      event_type:
+        type: string
+      id:
+        type: integer
+      publish_status:
+        description: '"draft" или "published"'
+        type: string
+      start_time:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.EventRegistration:
+    properties:
+      created_at:
+        type: string
+      event_id:
+        type: integer
+      id:
+        type: integer
+      participant_id:
+        type: integer
+      registered_at:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/models.Organizer'
+    type: object
+  models.Organizer:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        description: '"admin" или "organizer"'
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Participant:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: integer
+      phone:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Ticket:
+    properties:
+      created_at:
+        type: string
+      event_id:
+        type: integer
+      id:
+        type: integer
+      participant_id:
+        type: integer
+      qr_code:
+        type: string
+      status:
+        description: '"active" или "canceled"'
+        type: string
+      ticket_type:
+        description: '"free" или "paid"'
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@eventflow.com
+    name: API Support
+  description: API для системы управления событиями EventFlow
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: EventFlow API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентификация пользователя по email и паролю
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный вход
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "401":
+          description: Неверные учетные данные
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Вход в систему
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о текущем авторизованном пользователе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о пользователе
+          schema:
+            $ref: '#/definitions/models.Organizer'
+        "401":
+          description: Не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получение текущего пользователя
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создание нового аккаунта организатора с email и паролем
+      parameters:
+      - description: Данные регистрации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешная регистрация
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация нового организатора
+      tags:
+      - Auth
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех категорий событий с пагинацией
+      parameters:
+      - description: Пагинация [start, end]
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.Category'
+            type: array
+      summary: Получить список категорий
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: Создает новую категорию событий
+      parameters:
+      - description: Данные категории
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать категорию
+      tags:
+      - Categories
+  /dashboard/statistics:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает общую статистику по событиям, участникам, регистрациям
+        и посещаемости
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика dashboard
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Общая статистика для dashboard
+      tags:
+      - Dashboard
+  /event_registrations:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех регистраций участников на события с пагинацией
+      parameters:
+      - description: Пагинация [start, end]
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.EventRegistration'
+            type: array
+      summary: Получить список регистраций на события
+      tags:
+      - EventRegistrations
+    post:
+      consumes:
+      - application/json
+      description: Создает регистрацию участника на событие и автоматически создает
+        тикет
+      parameters:
+      - description: Данные регистрации
+        in: body
+        name: registration
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateEventRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.EventRegistration'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Зарегистрировать участника на событие
+      tags:
+      - EventRegistrations
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список событий с поддержкой пагинации и фильтрации
+      parameters:
+      - description: Пагинация [start, end]
+        example: '[0, 24]'
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        example: '["id", "ASC"]'
+        in: query
+        name: sort
+        type: string
+      - description: 'Фильтрация {field: value}'
+        example: '{"category_id": 1}'
+        in: query
+        name: filter
+        type: string
+      - description: Фильтр по категории
+        in: query
+        name: category_id
+        type: integer
+      - description: Фильтр по дате начала (>= start_date)
+        in: query
+        name: start_date
+        type: string
+      - description: Фильтр по дате окончания (<= end_date)
+        in: query
+        name: end_date
+        type: string
+      - description: Фильтр по статусу публикации (published/draft)
+        in: query
+        name: publish_status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список событий
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+      summary: Получить список событий
+      tags:
+      - Events
+    post:
+      consumes:
+      - application/json
+      description: Создает новое событие в системе
+      parameters:
+      - description: Данные события
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Созданное событие
+          schema:
+            $ref: '#/definitions/models.Event'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать новое событие
+      tags:
+      - Events
+  /organizers:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех организаторов событий с пагинацией
+      parameters:
+      - description: Пагинация [start, end]
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.Organizer'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получить список организаторов
+      tags:
+      - Organizers
+    post:
+      consumes:
+      - application/json
+      description: Создает нового организатора (требуется авторизация admin)
+      parameters:
+      - description: Данные организатора
+        in: body
+        name: organizer
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrganizerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Organizer'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создать организатора
+      tags:
+      - Organizers
+  /participants:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех участников событий с пагинацией
+      parameters:
+      - description: Пагинация [start, end]
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.Participant'
+            type: array
+      summary: Получить список участников
+      tags:
+      - Participants
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового участника событий
+      parameters:
+      - description: Данные участника
+        in: body
+        name: participant
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateParticipantRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Participant'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать участника
+      tags:
+      - Participants
+  /tickets:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех тикетов с пагинацией
+      parameters:
+      - description: Пагинация [start, end]
+        in: query
+        name: range
+        type: string
+      - description: Сортировка [field, order]
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          headers:
+            Content-Range:
+              description: Диапазон записей
+              type: string
+            X-Total-Count:
+              description: Общее количество записей
+              type: string
+          schema:
+            items:
+              $ref: '#/definitions/models.Ticket'
+            type: array
+      summary: Получить список тикетов
+      tags:
+      - Tickets
+    post:
+      consumes:
+      - application/json
+      description: Создает новый тикет с уникальным QR-кодом
+      parameters:
+      - description: Данные тикета
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Создать тикет
+      tags:
+      - Tickets
+  /tickets/qr/{qrcode}:
+    get:
+      consumes:
+      - application/json
+      description: Получение тикета по QR-коду для отслеживания посещаемости
+      parameters:
+      - description: QR-код тикета
+        in: path
+        name: qrcode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить тикет по QR-коду
+      tags:
+      - Tickets
+  /tickets/qr/{qrcode}/use:
+    post:
+      consumes:
+      - application/json
+      description: Отметить тикет как использованный для отслеживания посещаемости
+      parameters:
+      - description: QR-код тикета
+        in: path
+        name: qrcode
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Отметить тикет как использованный
+      tags:
+      - Tickets
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
